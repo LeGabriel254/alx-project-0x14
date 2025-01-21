@@ -65,6 +65,7 @@ const Movies: React.FC<MProps> = () => {
     <div className="min-h-screen bg-[#110F17] text-white px-4 md:px-10 lg:px-44">
       <div className="py-16">
         <div className="flex flex-col md:flex-row justify-between mb-4 items-center space-x-0 md:space-x-4">
+          
           <input
             type="text"
             placeholder="Search for a movie..."
@@ -75,10 +76,10 @@ const Movies: React.FC<MProps> = () => {
             onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setYear(Number(event.target.value))}
             className="border-2 border-[#E2D609] outline-none bg-transparent px-4 md:px-8 py-2 mt-4 md:mt-0 rounded-full w-full md:w-auto"
           >
-            <option value="">Select Year</option>
+            <option value="" className="text-white bg-slate-500">Select Year</option>
             {
               [2024, 2023, 2022, 2021, 2020, 2019].map((year: number) => (
-                <option value={year} key={year}>{year}</option>
+                <option value={year} key={year} className="text-black bg-slate-500 rounded-md">{year}</option>
               ))
             }
           </select>
@@ -115,7 +116,7 @@ const Movies: React.FC<MProps> = () => {
           <Button title="Next" action={() => setPage(page + 1)} />
         </div>
       </div>
-      
+
       {
         loading && <Loading />
       }
