@@ -109,11 +109,13 @@ const Movies: React.FC<MProps> = () => {
             ))
           }
         </div>
+
         <div className="flex justify-end space-x-4 mt-6">
           <Button title="Previous" action={() => setPage(prev => prev > 1 ? prev - 1 : 1)} />
           <Button title="Next" action={() => setPage(page + 1)} />
         </div>
       </div>
+      
       {
         loading && <Loading />
       }
