@@ -22,7 +22,7 @@ const Movies: React.FC<MProps> = () => {
       setLoading(true); // Set loading state to true when fetching starts.
 
       // Fetch data from the API with the current filters (page, year, genre).
-      const response = await fetch("/api/fetch-movies", {
+      const response = await fetch("/api/fetchmovies", {
         method: "POST",
         body: JSON.stringify({
           page,
@@ -65,7 +65,7 @@ const Movies: React.FC<MProps> = () => {
     <div className="min-h-screen bg-[#110F17] text-white px-4 md:px-10 lg:px-44">
       <div className="py-16">
         <div className="flex flex-col md:flex-row justify-between mb-4 items-center space-x-0 md:space-x-4">
-          
+
           <input
             type="text"
             placeholder="Search for a movie..."
