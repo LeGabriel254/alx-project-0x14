@@ -1,4 +1,3 @@
-// Importing the necessary types and interfaces
 import { MoviesProps } from "@/interfaces";
 import { NextApiRequest, NextApiResponse } from "next";
 
@@ -8,6 +7,7 @@ import { NextApiRequest, NextApiResponse } from "next";
  */
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   if (request.method === "POST") {
+    let resp: Response | null = null; // To hold the response object for cleanup if needed
     try {
       // Destructure request body
       const { year, page, genre } = request.body;
@@ -24,7 +24,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
       if (genre) apiUrl.searchParams.append("genre", genre);
 
       // Fetch data from the external API
-      const resp = await fetch(apiUrl.toString(), {
+      resp = await fetch(apiUrl.toString(), {
         headers: {
           "x-rapidapi-host": "moviedatabase8.p.rapidapi.com",
           "x-rapidapi-key": `${process.env.MOVIE_API_KEY}`,
@@ -50,6 +50,12 @@ export default async function handler(request: NextApiRequest, response: NextApi
       return response.status(500).json({
         error: error.message || "An unexpected error occurred",
       });
+    } finally {
+      // Cleanup or logging
+      console.log("Request handled at:", new Date().toISOString());
+      if (resp) {
+        console.log(`API Response Status: ${resp.status}`);
+      }
     }
   } else {
     // Handle unsupported HTTP methods
