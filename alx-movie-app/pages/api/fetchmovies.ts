@@ -1,61 +1,59 @@
 // Importing the necessary types and interfaces
-import { MoviesProps } from "@/interfaces"; // Interface for defining the structure of movie data
-import { NextApiRequest, NextApiResponse } from "next"; // Types for API request and response
+import { MoviesProps } from "@/interfaces";
+import { NextApiRequest, NextApiResponse } from "next";
 
-const apiKey = process.env.MOVIE_API_KEY || ""
-// The API route handler function
+/**
+ * API Handler for fetching movies based on year, page, and genre.
+ * Only supports POST requests.
+ */
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
-
-  // Check if the request method is POST
   if (request.method === "POST") {
-    console.log(request)
-    // Destructure the `year`, `page`, and `genre` parameters from the request body
-    const { year, page, genre } = request.body;
+    try {
+      // Destructure request body
+      const { year, page, genre } = request.body;
 
-    // Get the current date (used as a fallback if the year is not provided)
-    const date = new Date();
+      // Default to current year if no year is provided
+      const date = new Date();
 
-    // Fetch movie data from the external API
-    const resp = await fetch(
-      `https://moviesdatabase.p.rapidapi.com/titles?year=${year || date.getFullYear() // Use the provided year or default to the current year
-      }&sort=year.decr&limit=12&page=${page}&${genre && `genre=${genre}`}`, // Add the genre filter if provided
-      {
+      // Construct the API endpoint URL
+      const apiUrl = new URL("https://moviedatabase8.p.rapidapi.com/titles");
+      apiUrl.searchParams.append("year", year || date.getFullYear().toString());
+      apiUrl.searchParams.append("sort", "year.decr");
+      apiUrl.searchParams.append("limit", "12");
+      apiUrl.searchParams.append("page", page);
+      if (genre) apiUrl.searchParams.append("genre", genre);
+
+      // Fetch data from the external API
+      const resp = await fetch(apiUrl.toString(), {
         headers: {
-          "x-rapidapi-host": "moviesdatabase.p.rapidapi.com", // RapidAPI host for the Movies Database API
-          "x-rapidapi-key": apiKey, // API key retrieved from environment variables
+          "x-rapidapi-host": "moviedatabase8.p.rapidapi.com",
+          "x-rapidapi-key": `${process.env.MOVIE_API_KEY}`,
         },
+      });
+
+      // Handle non-OK responses
+      if (!resp.ok) {
+        const errorDetails = await resp.json();
+        throw new Error(`Failed to fetch movies: ${errorDetails.message || resp.statusText}`);
       }
-    );
-    console.log(apiKey)
-    console.dir(resp)
-    return response.json(
-      { hello: "Random" }
 
-    )
+      // Parse and process the response
+      const moviesResponse = await resp.json();
+      const movies: MoviesProps[] = moviesResponse.results;
 
-    // Check if the response from the API is not successful
-    // if (!resp.ok) throw new Error("Failed to fetch movies");
-
-    // // Parse the JSON response from the API
-    // const moviesResponse = await resp.json();
-
-    // // Extract the movie results and type them as an array of `MoviesProps`
-    // const movies: MoviesProps[] = moviesResponse.results;
-
-    // // Return the movies in the response with a 200 status code
-    // return response.status(200).json({
-    //   movies,
-    // });
-
-  } else if (request.method === "GET") {
-    return response.json(
-      { hello: "Random" }
-
-    )
-
+      // Return the movies data
+      return response.status(200).json({
+        movies,
+      });
+    } catch (error: any) {
+      // Handle any errors gracefully
+      return response.status(500).json({
+        error: error.message || "An unexpected error occurred",
+      });
+    }
   } else {
-    // If the request method is not POST, send a 405 (Method Not Allowed) response
-    response.setHeader('Allow', ['POST']); // Specify allowed methods in the header
-    response.status(405).end(`Method ${request.method} Not Allowed in here`);
+    // Handle unsupported HTTP methods
+    response.setHeader("Allow", ["POST"]);
+    return response.status(405).end(`Method ${request.method} Not Allowed in this route`);
   }
 };
