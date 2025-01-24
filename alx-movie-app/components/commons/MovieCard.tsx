@@ -1,19 +1,29 @@
-import { MovieProps } from "@/interfaces"
-import Image from "next/image"
+import React from "react";
+import { MoviesProps } from "@/interfaces";
 
-const MovieCard: React.FC<MovieProps> = ({ title, posterImage, releaseYear }) => {
+
+const MovieCard: React.FC<MoviesProps> = ({ title, imageUrl, description, releaseDate, imdbUrl, rating }) => {
   return (
-    <div className="h-[563px]">
-      <div>
-        <Image className="h-[430px] w-full rounded-md hover:cursor-pointer" src={posterImage} width={100} height={100} alt={title} />
-
-      </div>
-      <div className="flex justify-between py-4">
-        <p className="text-xl font-bold">{title}</p>
-        <p className="text-xl text-[#E2D609]">{releaseYear}</p>
+    <div className="movie-card">
+      <img src={imageUrl} alt={title} className="movie-image" />
+      <div className="movie-info">
+        <h2>{title}</h2>
+        <p>{description}</p>
+        <p><strong>Release Date:</strong> {releaseDate}</p>
+        <p><strong>Rating:</strong> {rating}</p>
+        <a href={imdbUrl} target="_blank" rel="noopener noreferrer">View on IMDb</a>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default MovieCard
+// Usage in the Movies component
+<MovieCard
+  title="The Shawshank Redemption"
+  imageUrl="https://m.media-amazon.com/images/M/MV5BMDAyY2FhYjctNDc5OS00MDNlLThiMGUtY2UxYWVkNGY2ZjljXkEyXkFqcGc@._V1_.jpg"
+  description="A banker convicted of uxoricide forms a friendship over a quarter century with a hardened convict, while maintaining his innocence and trying to remain hopeful through simple compassion."
+  releaseDate="1994-10-14"
+  imdbUrl="https://www.imdb.com/title/tt0111161/"
+  rating="R"
+/>
+ export default MovieCard;

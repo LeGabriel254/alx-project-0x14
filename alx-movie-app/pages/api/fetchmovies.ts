@@ -7,17 +7,25 @@ import { NextApiRequest, NextApiResponse } from "next";
  */
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   if (request.method === "POST") {
-    let resp: Response | null = null; // To hold the response object for cleanup if needed
+    let resp: Response | null = null;
+
     try {
-      // Destructure request body
-      const { year, page, genre } = request.body;
+      // Validate environment variables
+      if (!process.env.XRAPIDKEY || !process.env.XRAPIDAPHOST) {
+        return response.status(500).json({ error: "Missing API credentials" });
+      }
 
-      // Default to current year if no year is provided
-      const date = new Date();
+      // Validate and destructure request body
+      const { year, page, genre }: { year?: string; page?: string; genre?: string } = request.body;
 
-      // Construct the API endpoint URL
-      const apiUrl = new URL("https://moviedatabase8.p.rapidapi.com/titles");
-      apiUrl.searchParams.append("year", year || date.getFullYear().toString());
+      if (!page || isNaN(Number(page)) || Number(page) < 1) {
+        return response.status(400).json({ error: "Invalid page number provided" });
+      }
+
+      // Default year to current year if not provided
+      const currentYear = new Date().getFullYear().toString();
+      const apiUrl = new URL(`https://imdb236.p.rapidapi.com/imdb/most-popular-movies`);
+      apiUrl.searchParams.append("year", year || currentYear);
       apiUrl.searchParams.append("sort", "year.decr");
       apiUrl.searchParams.append("limit", "12");
       apiUrl.searchParams.append("page", page);
@@ -26,40 +34,33 @@ export default async function handler(request: NextApiRequest, response: NextApi
       // Fetch data from the external API
       resp = await fetch(apiUrl.toString(), {
         headers: {
-          "x-rapidapi-host": "moviedatabase8.p.rapidapi.com",
-          "x-rapidapi-key": `${process.env.MOVIE_API_KEY}`,
+          "x-rapidapi-host": process.env.XRAPIDAPHOST,
+          "x-rapidapi-key": process.env.XRAPIDKEY,
         },
       });
 
-      // Handle non-OK responses
       if (!resp.ok) {
         const errorDetails = await resp.json();
-        throw new Error(`Failed to fetch movies: ${errorDetails.message || resp.statusText}`);
+        return response.status(resp.status).json({ error: errorDetails.message || resp.statusText });
       }
 
-      // Parse and process the response
+      // Parse the API response
       const moviesResponse = await resp.json();
       const movies: MoviesProps[] = moviesResponse.results;
 
-      // Return the movies data
-      return response.status(200).json({
-        movies,
-      });
+      return response.status(200).json({ movies });
     } catch (error: any) {
-      // Handle any errors gracefully
-      return response.status(500).json({
-        error: error.message || "An unexpected error occurred",
-      });
+      return response.status(500).json({ error: error.message || "An unexpected error occurred" });
     } finally {
-      // Cleanup or logging
       console.log("Request handled at:", new Date().toISOString());
       if (resp) {
+        console.log(`API URL: ${resp.url}`);
         console.log(`API Response Status: ${resp.status}`);
       }
     }
   } else {
-    // Handle unsupported HTTP methods
+    // Handle unsupported methods
     response.setHeader("Allow", ["POST"]);
-    return response.status(405).end(`Method ${request.method} Not Allowed in this route`);
+    return response.status(405).end(`Method ${request.method} Not Allowed`);
   }
-};
+}

@@ -7,6 +7,7 @@ export interface ComponentProps {
 export interface ButtonProps {
   title: string
   action?: () => void
+  className?: string;
 }
 
 export interface MovieProps {
@@ -29,8 +30,10 @@ interface ReleaseYear {
 }
 
 export interface MoviesProps {
-  id: string
-  primaryImage: PrimaryImage
-  titleText: TitleText
-  releaseYear: ReleaseYear
+  title: string;
+  imageUrl: string;
+  description: string;
+  releaseDate: string;
+  imdbUrl: string;
+  rating: string;
 }

@@ -1,74 +1,83 @@
+import React, { useCallback, useEffect, useState } from "react";
 import Button from "@/components/commons/Button";
 import Loading from "@/components/commons/Loading";
 import MovieCard from "@/components/commons/MovieCard";
 import { MoviesProps } from "@/interfaces";
-import { useCallback, useEffect, useState } from "react";
+import debounce from "lodash/debounce";
 
+const Movies: React.FC = () => {
+  const [page, setPage] = useState<number>(1); // Current page number
+  const [year, setYear] = useState<number | null>(null); // Year filter
+  const [genre, setGenre] = useState<string>("All"); // Genre filter
+  const [movies, setMovies] = useState<MoviesProps[]>([]); // Fetched movies
+  const [loading, setLoading] = useState<boolean>(false); // Loading state
+  const [error, setError] = useState<string | null>(null); // Error state
+  const [searchQuery, setSearchQuery] = useState<string>(""); // Search query
+  const [cache, setCache] = useState<{ [key: string]: MoviesProps[] }>({}); // Cache for paginated data
 
-interface MProps {
-  movies: MoviesProps[] // Defines the type for the movies prop, which is an array of MoviesProps.
-}
+  // Debounced search function
+  const handleSearch = debounce((query: string) => {
+    setSearchQuery(query);
+    setPage(1); // Reset page when searching
+  }, 500);
 
-const Movies: React.FC<MProps> = () => {
-  const [page, setPage] = useState<number>(1); // State to keep track of the current page number.
-  const [year, setYear] = useState<number | null>(null); // State for the year filter, can be null or a number.
-  const [genre, setGenre] = useState<string>("All"); // State for the genre filter, default is "All".
-  const [movies, setMovies] = useState<MoviesProps[]>([]); // State to store the fetched movies.
-  const [loading, setLoading] = useState<boolean>(false); // State to track if the data is being loaded.
-
-  // Fetches movies based on filters like page, year, and genre.
+  // Fetch movies from API
   const fetchMovies = useCallback(async () => {
-    try {
-      setLoading(true); // Set loading state to true when fetching starts.
+    const cacheKey = `${page}-${year}-${genre}-${searchQuery}`; // Unique key for cache
 
-      // Fetch data from the API with the current filters (page, year, genre).
+    if (cache[cacheKey]) {
+      setMovies(cache[cacheKey]); // Use cached data if available
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
       const response = await fetch("/api/fetchmovies", {
         method: "POST",
         body: JSON.stringify({
           page,
           year,
-          genre: genre === "All" ? "" : genre, // If genre is "All", send an empty string, otherwise send the genre.
+          genre: genre === "All" ? "" : genre,
+          query: searchQuery,
         }),
         headers: {
-          "Content-Type": "application/json; charset=utf-8", // Set the content type for the request.
+          "Content-Type": "application/json; charset=utf-8",
         },
       });
 
-      // If the response is not ok, throw an error.
       if (!response.ok) {
         throw new Error(`Failed to fetch movies: ${response.statusText}`);
       }
 
-      // Parse the response as JSON and extract the movies.
       const data = await response.json();
       const results = data.movies;
 
-      console.log(results); // Log the fetched movies for debugging.
-      setMovies(results); // Update the state with the fetched movies.
+      setMovies(results);
+      setCache((prev) => ({ ...prev, [cacheKey]: results })); // Cache results
     } catch (error: any) {
-      console.error("Error fetching movies:", error.message); // Log any errors that occur.
-      alert("Failed to load movies. Please try again later."); // Show an alert if there's an error.
+      console.error("Error fetching movies:", error.message);
+      setError("Failed to load movies. Please try again later.");
     } finally {
-      setLoading(false); // Set loading state to false once the request is finished.
+      setLoading(false);
     }
-  }, [page, year, genre]); // Depend on page, year, and genre, so the effect will rerun when they change.
+  }, [page, year, genre, searchQuery, cache]);
 
-  // Effect hook to fetch movies whenever the fetchMovies function changes.
+  // Fetch movies when dependencies change
   useEffect(() => {
     fetchMovies();
-  }, [fetchMovies]); // Only run the effect if fetchMovies has changed.
-
-
-
+  }, [fetchMovies]);
 
   return (
     <div className="min-h-screen bg-[#110F17] text-white px-4 md:px-10 lg:px-44">
       <div className="py-16">
+        {/* Search and Filters */}
         <div className="flex flex-col md:flex-row justify-between mb-4 items-center space-x-0 md:space-x-4">
-
           <input
             type="text"
             placeholder="Search for a movie..."
+            onChange={(e) => handleSearch(e.target.value)}
             className="border-2 w-full md:w-96 border-[#E2D609] outline-none bg-transparent px-4 py-2 rounded-full text-white placeholder-gray-400"
           />
 
@@ -77,53 +86,75 @@ const Movies: React.FC<MProps> = () => {
             className="border-2 border-[#E2D609] outline-none bg-transparent px-4 md:px-8 py-2 mt-4 md:mt-0 rounded-full w-full md:w-auto"
           >
             <option value="" className="text-white bg-slate-500">Select Year</option>
-            {
-              [2024, 2023, 2022, 2021, 2020, 2019].map((year: number) => (
-                <option value={year} key={year} className="text-black bg-slate-500 rounded-md">{year}</option>
-              ))
-            }
+            {[2024, 2023, 2022, 2021, 2020, 2019].map((year) => (
+              <option value={year} key={year} className="text-black bg-slate-500 rounded-md">
+                {year}
+              </option>
+            ))}
           </select>
         </div>
 
+        {/* Genre Filter */}
         <p className="text-[#E2D609] text-xl mb-6 mt-6">Online streaming</p>
         <div className="flex flex-col md:flex-row items-center justify-between">
-          <h1 className="text-lg md:text-6xl font-bold">{year} {genre} Movie List</h1>
+          <h1 className="text-lg md:text-6xl font-bold">
+            {year || "All Years"} {genre} Movie List
+          </h1>
           <div className="flex flex-wrap space-x-0 md:space-x-4 mt-4 md:mt-0">
-            {
-              ['All', 'Animation', 'Comedy', 'Fantasy'].map((genre: string, key: number) => (
-                <Button title={genre} key={key} action={() => setGenre(genre)} />
-              ))
-            }
+            {["All", "Animation", "Comedy", "Fantasy"].map((g, key) => (
+              <Button
+                title={g}
+                key={key}
+                action={() => setGenre(g)}
+                className={g === genre ? "bg-[#E2D609]" : ""}
+              />
+            ))}
           </div>
         </div>
 
-        {/* Movies output */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 mt-10">
-          {
-            movies?.map((movie: MoviesProps, key: number) => (
-              <MovieCard
-                title={movie?.titleText.text}
-                posterImage={movie?.primaryImage?.url}
-                releaseYear={movie?.releaseYear.year}
-                key={key}
-              />
-            ))
-          }
-        </div>
+        {/* Error Message */}
+        {error && <p className="text-red-500 text-center mt-6">{error}</p>}
 
+        {/* Empty State */}
+        {movies.length === 0 && !loading && !error && (
+          <p className="text-center text-gray-400 mt-6">No movies found. Try adjusting your filters.</p>
+        )}
+
+       {/* Movies Grid */}
+<div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 mt-10">
+  {movies.map((movie, key) => (
+    <MovieCard
+      key={key} // key should always be on the outermost element
+      title={movie.title} // Use primaryTitle or originalTitle for the movie's title
+      imageUrl={movie.imageUrl} // movie.primaryImage contains the URL for the poster
+      description={movie.description} // Provide a short description of the movie
+      releaseDate={movie.releaseDate} // Release date to show when the movie was released
+      imdbUrl={movie.imdbUrl} // Link to IMDb page for each movie
+      rating={movie.rating} // Movie rating like "R", "PG-13", etc.
+    />
+  ))}
+</div>
+
+
+        {/* Pagination */}
         <div className="flex justify-end space-x-4 mt-6">
-          <Button title="Previous" action={() => setPage(prev => prev > 1 ? prev - 1 : 1)} />
-          <Button title="Next" action={() => setPage(page + 1)} />
+          <Button
+            title="Previous"
+            action={() => setPage((prev) => (prev > 1 ? prev - 1 : 1))}
+            aria-label="Go to previous page"
+          />
+          <Button
+            title="Next"
+            action={() => setPage(page + 1)}
+            aria-label="Go to next page"
+          />
         </div>
       </div>
 
-      {
-        loading && <Loading />
-      }
+      {/* Loading Spinner */}
+      {loading && <Loading />}
     </div>
-
   );
 };
-
 
 export default Movies;
