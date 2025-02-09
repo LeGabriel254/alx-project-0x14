@@ -120,20 +120,20 @@ const Movies: React.FC = () => {
           <p className="text-center text-gray-400 mt-6">No movies found. Try adjusting your filters.</p>
         )}
 
-       {/* Movies Grid */}
-<div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 mt-10">
-  {movies.map((movie, key) => (
-    <MovieCard
-      key={key} // key should always be on the outermost element
-      title={movie.title} // Use primaryTitle or originalTitle for the movie's title
-      imageUrl={movie.imageUrl} // movie.primaryImage contains the URL for the poster
-      description={movie.description} // Provide a short description of the movie
-      releaseDate={movie.releaseDate} // Release date to show when the movie was released
-      imdbUrl={movie.imdbUrl} // Link to IMDb page for each movie
-      rating={movie.rating} // Movie rating like "R", "PG-13", etc.
-    />
-  ))}
-</div>
+        {/* Movies Grid */}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 mt-10">
+          {movies.map((movie, key) => (
+            <MovieCard
+              key={key} // key should always be on the outermost element
+              title={movie.title} // Use primaryTitle or originalTitle for the movie's title
+              imageUrl={movie.imageUrl} // movie.primaryImage contains the URL for the poster
+              description={movie.description} // Provide a short description of the movie
+              releaseDate={movie.releaseDate} // Release date to show when the movie was released
+              imdbUrl={movie.imdbUrl} // Link to IMDb page for each movie
+              rating={movie.rating} // Movie rating like "R", "PG-13", etc.
+            />
+          ))}
+        </div>
 
 
         {/* Pagination */}
