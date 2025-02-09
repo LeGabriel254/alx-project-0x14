@@ -40,7 +40,7 @@ const Home: React.FC = () => {
         </p>
         <Button title="Get Started" />
       </section>
-      
+
     </div>
   );
 };
